@@ -1,31 +1,37 @@
 import requests
-import logging
 from bs4 import BeautifulSoup
+import logging  
 
-# ログのフォーマットを設定
-log_format = '%(levelname)s : %(asctime)s : %(message)s'
+URL = "https://scraping-for-beginner.herokuapp.com/"
+LAST_HREF = ''
 
-# ロギング設定を行う関数を作成
-def configure_logging(log_file_path, log_level=logging.INFO):
-    # ルートロガーを取得
-    logger = logging.getLogger()
+# ロギングの設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    # ログのフォーマットを設定
-    formatter = logging.Formatter(log_format)
+def send_line_notify(notification_message, line_notify_token):
+    line_notify_api = 'https://notify-api.line.me/api/notify'
+    headers = {'Authorization': f'Bearer {line_notify_token}'}
+    data = {'message': f'{notification_message}'}
+    requests.post(line_notify_api, headers=headers, data=data)
 
-    # コンソールハンドラを作成して設定
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+def check_for_updates(line_notify_token):
+    global LAST_HREF
+    try:
+        res = requests.get(URL)
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, 'html.parser')
+        elems = soup.find_all('a', attrs={'class': 'entry-card-wrap'})
+        
+        if elems:
+            elem = elems[0]
+            title = elem.get('title', '')
+            href = elem.get('href', '')
 
-    # ファイルハンドラを作成して設定
-    file_handler = logging.FileHandler(log_file_path)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+            if LAST_HREF != href:
+                send_line_notify(title + " " + URL + href, line_notify_token)
+                logger.info(f"Notification sent: {title} {URL}{href}")
+            LAST_HREF = href
 
-    # ログレベルを設定
-    logger.setLevel(log_level)
-
-# ロギングの設定を行う関数を呼び出し
-configure_logging('path/log.log')
-logging.info('START')
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Web scraping error: {e}")
