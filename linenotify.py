@@ -3,7 +3,7 @@ import time
 from main import check_for_updates
 import logging  
 
-LINE_NOTIFY_TOKEN = 'lhJWSltbTmeL0vHJX2vJQq9ZZzAzaEMcRzHLi4yOeKC'
+LINE_NOTIFY_TOKEN = 'LINEnotifyのアクセストークン'
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO)
